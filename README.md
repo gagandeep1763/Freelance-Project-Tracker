@@ -43,16 +43,21 @@ cd Freelance-Project-Tracker
 2. Create & Activate Virtual Environment
 
 python -m venv venv
+
 source venv/bin/activate   
+
 # On Windows: venv\Scripts\activate
 
 3: Install Python Dependencies
+
 From your project root folder:
 
 pip install flask flask-cors pymongo python-dotenv
 
 4: Create MongoDB Database on MongoDB Atlas
+
 Go to: https://www.mongodb.com/cloud/atlas
+
 Sign up / Log in
 
 5. Create a Free Cluster:
@@ -65,6 +70,7 @@ Click Create
 
 Create a Database User:
 Go to Database Access (left panel)
+
 Click “+ ADD NEW DATABASE USER”
 Set username and password 
 

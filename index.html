@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Freelance Project Tracker</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 40px 24px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+      color: #222;
+      min-height: 100vh;
+    }
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    .container {
+      display: flex;
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+    }
+    .left, .right {
+      flex: 1;
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+      min-width: 300px;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 6px;
+      color: #333;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    button {
+      background: linear-gradient(to right, #fa7e1e, #d62976);
+      color: white;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 0;
+      font-size: 1.05rem;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .button-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .button-row button {
+      flex: 1;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    #projects {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .project {
+      background: #f0f4ff;
+      border-radius: 12px;
+      padding: 18px 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .completed {
+      border-left: 6px solid #10b981;
+      background: #e0f8ef;
+    }
+    .project b {
+      font-size: 1.2rem;
+      color: #4f5bd5;
+    }
+    .project-info {
+      margin-top: 8px;
+      font-size: 0.95rem;
+      color: #555;
+    }
+    .project-info span {
+      display: inline-block;
+      margin-right: 12px;
+    }
+    .project button {
+      margin-top: 12px;
+      width: auto;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      background: #10b981;
+    }
+    .project button:hover {
+      background: #059669;
+    }
+    #earnings {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #16a34a;
+      margin-top: 12px;
+      text-align: center;
+    }
+    #showEarningsBtn {
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column-reverse;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Freelance Project Tracker</h1>
+  <div class="container">
+    <div class="left">
+      <h2>➕ Add / Update Project</h2>
+      <label for="title">Title</label>
+      <input id="title" type="text" placeholder="Project Title" />
+      <label for="client">Client</label>
+      <input id="client" type="text" placeholder="Client Name" />
+      <label for="status">Status</label>
+      <select id="status">
+        <option>Pending</option>
+        <option>Completed</option>
+      </select>
+      <label for="deadline">Deadline</label>
+      <input id="deadline" type="date" />
+      <label for="amount">Amount (Rs.)</label>
+      <input id="amount" type="number" min="0" placeholder="Project Amount" />
+      <button onclick="addOrUpdateProject()">✅ Add / Update</button>
+    </div>
+    <div class="right">
+      <h2>📋 Projects</h2>
+      <div class="button-row">
+        <button onclick="fetchProjects()">🔄 Refresh List</button>
+      </div>
+      <div id="projects" aria-live="polite"></div>
+      <button id="showEarningsBtn" onclick="scrollToEarnings()">💰 Show Total Earnings</button>
+      <div id="earnings">Total Earnings: Rs. 0</div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000';
+
+    function setDeadlineMinDate() {
+      const deadlineInput = document.getElementById('deadline');
+      const today = new Date().toISOString().split('T')[0];
+      deadlineInput.min = today;
+      if (!deadlineInput.value || deadlineInput.value < today) {
+        deadlineInput.value = today;
+      }
+    }
+
+    function scrollToEarnings() {
+      document.getElementById('earnings').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function fetchProjects() {
+      try {
+        const [projectsRes, earningsRes] = await Promise.all([
+          fetch(API_BASE + '/projects'),
+          fetch(API_BASE + '/earnings')
+        ]);
+
+        if (!projectsRes.ok || !earningsRes.ok)
+          throw new Error('Failed to fetch data');
+
+        const projects = await projectsRes.json();
+        const earnings = await earningsRes.json();
+
+        const container = document.getElementById('projects');
+        const earningsDiv = document.getElementById('earnings');
+        earningsDiv.textContent = 'Total Earnings: Rs. ' + earnings.total_earnings;
+
+        container.innerHTML = '';
+
+        const pendingProjects = projects.filter(p => p.status === 'Pending');
+
+        if (pendingProjects.length === 0) {
+          container.innerHTML = '<p>No active (pending) projects found.</p>';
+          return;
+        }
+
+        pendingProjects.forEach(p => {
+          const div = document.createElement('div');
+          div.className = 'project';
+          div.innerHTML = `
+            <b>${p.title}</b>
+            <div class="project-info">
+              <span><strong>Client:</strong> ${p.client}</span>
+              <span><strong>Status:</strong> ${p.status}</span>
+              <span><strong>Amount:</strong> Rs. ${p.amount}</span>
+              <span><strong>Deadline:</strong> ${new Date(p.deadline).toLocaleDateString()}</span>
+            </div>
+            <button onclick="markCompleted('${p._id}')">✔ Mark Completed</button>
+          `;
+          container.appendChild(div);
+        });
+      } catch (error) {
+        alert('Error fetching projects or earnings: ' + error.message);
+      }
+    }
+
+    async function addOrUpdateProject() {
+      const data = {
+        title: document.getElementById('title').value.trim(),
+        client: document.getElementById('client').value.trim(),
+        status: document.getElementById('status').value,
+        amount: parseInt(document.getElementById('amount').value),
+        deadline: document.getElementById('deadline').value
+      };
+
+      if (!data.title || !data.client || !data.amount || !data.deadline) {
+        alert('Please fill all fields');
+        return;
+      }
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (data.deadline < todayStr) {
+        alert('Deadline must be today or in the future.');
+        return;
+      }
+
+      try {
+        const res = await fetch(API_BASE + '/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('Failed to add/update project');
+        alert('Project added/updated!');
+        document.getElementById('title').value = '';
+        document.getElementById('client').value = '';
+        document.getElementById('status').value = 'Pending';
+        document.getElementById('amount').value = '';
+        setDeadlineMinDate();
+        fetchProjects();
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function markCompleted(id) {
+      try {
+        const res = await fetch(`${API_BASE}/projects/${id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'Completed' })
+        });
+        if (!res.ok) throw new Error('Failed to update status');
+        alert('Marked as completed!');
+        fetchProjects();
+      } catch (error) {
+        alert('Error updating status: ' + error.message);
+      }
+    }
+
+    window.onload = () => {
+      setDeadlineMinDate();
+      fetchProjects();
+    };
+  </script>
+</body>
+</html>

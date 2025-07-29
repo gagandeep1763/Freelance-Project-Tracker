@@ -1,5 +1,7 @@
 # Freelance Project Tracker
 
+![App Screenshot](https://raw.githubusercontent.com/gagandeep1763/Freelance-Project-Tracker/main/image.png)
+
 A full-stack application built using **Flask** and **MongoDB** for managing freelance projects. 
 It helps freelancers keep track of their work, update project statuses, and view total earnings.
 The frontend is created using **HTML**, **CSS**, and **JavaScript**, making it easy to interact with the backend APIs.

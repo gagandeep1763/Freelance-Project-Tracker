@@ -12,14 +12,23 @@ CORS(app)
 # Load environment variables from .env
 load_dotenv()
 
-# Get username and password from .env
+# Get Mongo credentials
 username = os.getenv("MONGO_USER")
-password = quote_plus(os.getenv("MONGO_PASS"))  # Safely encode special chars
+raw_password = os.getenv("MONGO_PASS")
+cluster = os.getenv("MONGO_CLUSTER", "cluster0.ahac7me.mongodb.net")  # default if not set
+
+# Safety check
+if not username or not raw_password:
+    raise EnvironmentError("MONGO_USER or MONGO_PASS is not set in environment variables.")
+
+# Safely encode the password
+password = quote_plus(raw_password)
 
 # MongoDB URI
-uri = f"mongodb+srv://{username}:{password}@cluster0.ahac7me.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+uri = f"mongodb+srv://{username}:{password}@{cluster}/?retryWrites=true&w=majority"
 client = MongoClient(uri)
 
+# Connect to database and collection
 db = client.freelance_projects
 projects_collection = db.projects
 

@@ -2,6 +2,31 @@
 <html>
 <head>
     <title>Freelance Project Tracker</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        input, select, button {
+            margin: 5px 0;
+            padding: 6px;
+            width: 100%;
+        }
+        form {
+            max-width: 400px;
+        }
+        ul {
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+            list-style: none;
+            background: #f0f0f0;
+            padding: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>Freelance Project Tracker</h1>
@@ -31,7 +56,7 @@
     <ul id="projectList"></ul>
 
     <script>
-        const API_BASE = ''; // Use relative path for both local and deployed
+        const API_BASE = ''; // Leave blank if backend and frontend are served together
 
         document.getElementById('projectForm').addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -43,32 +68,42 @@
                 deadline: document.getElementById('deadline').value
             };
 
-            const response = await fetch(`${API_BASE}/api/projects`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(project)
-            });
+            try {
+                const response = await fetch(`${API_BASE}/api/projects`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(project)
+                });
 
-            const data = await response.json();
-            alert(data.message || data.error);
+                const data = await response.json();
+                alert(data.message || data.error);
 
-            if (response.ok) {
-                this.reset();
-                loadProjects();
+                if (response.ok) {
+                    this.reset();
+                    loadProjects();
+                }
+            } catch (error) {
+                console.error('Error adding project:', error);
+                alert('Failed to add project. Please try again later.');
             }
         });
 
         async function loadProjects() {
-            const response = await fetch(`${API_BASE}/api/projects`);
-            const projects = await response.json();
+            try {
+                const response = await fetch(`${API_BASE}/api/projects`);
+                const projects = await response.json();
 
-            const list = document.getElementById('projectList');
-            list.innerHTML = '';
-            projects.forEach(p => {
-                const li = document.createElement('li');
-                li.textContent = `${p.name} (Client: ${p.client}) - ${p.status}, Due: ${p.deadline}`;
-                list.appendChild(li);
-            });
+                const list = document.getElementById('projectList');
+                list.innerHTML = '';
+                projects.forEach(p => {
+                    const li = document.createElement('li');
+                    li.textContent = `${p.name} (Client: ${p.client}) - ${p.status}, Due: ${p.deadline}`;
+                    list.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                alert('Failed to load projects. Please refresh or try again later.');
+            }
         }
 
         // Load projects on page load

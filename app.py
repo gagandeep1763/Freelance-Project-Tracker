@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -6,43 +6,52 @@ from urllib.parse import quote_plus
 from dotenv import load_dotenv
 import os
 
-app = Flask(__name__)
-CORS(app)
-
+# Load environment variables
 load_dotenv()
 
+# Escape username & password
 username = quote_plus(os.getenv("MONGO_USER"))
 password = quote_plus(os.getenv("MONGO_PASS"))
 
+# Flask App Setup
+app = Flask(__name__)
+CORS(app)
+
+# MongoDB Connection
 uri = f"mongodb+srv://{username}:{password}@cluster0.ahac7me.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(uri)
-
 db = client.freelance_projects
 projects_collection = db.projects
 
+# Serve Frontend
 @app.route('/')
 def home():
-    return 'API is working! 🚀'
+    return render_template('index.html')
 
-@app.route('/projects', methods=['GET'])
+# Get all projects
+@app.route('/api/projects', methods=['GET'])
 def get_projects():
     projects = []
     for proj in projects_collection.find():
-        proj['_id'] = str(proj['_id'])
+        proj['_id'] = str(proj['_id'])  # Make ObjectId JSON serializable
         projects.append(proj)
     return jsonify(projects)
 
-@app.route('/projects', methods=['POST'])
+# Add or update a project
+@app.route('/api/projects', methods=['POST'])
 def add_project():
     data = request.json
+    if not data:
+        return jsonify({'error': 'No project data provided'}), 400
     projects_collection.update_one(
-        {'title': data['title']},
+        {'name': data['name']},
         {'$set': data},
         upsert=True
     )
     return jsonify({'message': 'Project added/updated'}), 201
 
-@app.route('/projects/<project_id>/status', methods=['PUT'])
+# Update project status
+@app.route('/api/projects/<project_id>/status', methods=['PUT'])
 def update_status(project_id):
     status = request.json.get('status')
     if not status:
@@ -50,7 +59,8 @@ def update_status(project_id):
     projects_collection.update_one({'_id': ObjectId(project_id)}, {'$set': {'status': status}})
     return jsonify({'message': 'Status updated'})
 
-@app.route('/earnings', methods=['GET'])
+# Earnings calculation
+@app.route('/api/earnings', methods=['GET'])
 def calculate_earnings():
     pipeline = [
         {'$match': {'status': 'Completed'}},
